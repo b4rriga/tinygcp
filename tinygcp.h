@@ -1,8 +1,11 @@
 /*
 
-TinyGCP: Lightweight G-code parser.
+TinyGCP: Lightweight G-code parser
 
-Hugo Barriga Burgueño <hbb685@alumnos.unican.es>
+Word support list is kept to a minimum. This means the library is limited to
+M-codes, G-codes, 3 axes (X, Y, Z), and the feed rate as it stands.
+
+Copyright (C) 2026 Hugo Barriga
 
 */
 
