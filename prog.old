@@ -1,0 +1,263 @@
+#include "tinygcp.h"
+
+void tinyGCP_init(void)
+{
+	line_char_count = 0;
+	line_buf[line_char_count] = '\0';
+	comments = line_buf;
+	last_comment = comments;
+	block_delete = false;
+	begin_end = false;
+	line_ready = false;
+}
+
+bool tinyGCP_append_char(char c)
+{
+	if (line_ready) tinyGCP_init();
+
+	if (c == '\r' || c == '\n') {
+		// Ignore CR so as to support CRLF and NL format
+		if (c == '\n') line_ready = true;
+	} else {
+		line_buf[line_char_count] = c;
+		line_char_count++;
+
+		// TODO: throw error?
+		if (line_char_count > MAX_LINE_SIZE)
+			tinyGCP_init();
+
+		line_buf[line_char_count] = '\0';
+	}
+
+	return line_ready;
+}
+
+/*
+void tinyGCP_parse_line(char* line)
+{
+	tinyGCP_init();
+
+	size_t cursor = 0;
+	while (line[cursor] != '\0') {
+		tinyGCP_append_char(line[cursor]);
+		cursor++;
+	}
+
+	tinyGCP_append_char('\n');
+	tinyGCP_parse_line();
+}
+*/
+
+void tinyGCP_parse_line(void)
+{
+	size_t line_len = strlen(line_buf);
+	line_buf[line_len + 1] = '\0';
+
+	size_t cursor = 0;
+	size_t cursor_correction = 0;
+	bool oparen_found = false;
+	bool semicolon_found = false;
+
+	while (line_buf[cursor] != '\0') {
+		char c = line_buf[cursor];
+
+		if (!semicolon_found && c == '(')
+			oparen_found = true;
+
+		if (!oparen_found && c == ';')
+			semicolon_found = true;
+
+		if (oparen_found || semicolon_found) {
+			for (size_t i = cursor; i < line_len; i++)
+				line_buf[i] = line_buf[i + 1];
+
+			line_buf[line_len] = c;
+		} else {
+			if (c == ' ' || c == '\t') {
+				int removeCharacterPointer = cursor;
+
+				for (size_t i = cursor; i < line_len; i++)
+					line_buf[i] = line_buf[i + 1];
+
+				cursor_correction++;
+			} else cursor++;
+		}
+
+		if (!semicolon_found && c == ')') {
+			oparen_found = false;
+
+			for (size_t i = cursor; i < line_len; i++) {
+				if (line_buf[i] == '(')
+					break;
+
+				if (line_buf[i] == ')') {
+					oparen_found = true;
+					break;
+				}
+			}
+		}
+	}
+
+	comments = line_buf + strlen(line_buf) + cursor_correction + 1;
+	last_comment = comments;
+
+	// There are several 'active' comments which look like comments but cause some action, like
+	// '(debug,..)' or '(print,..)'. If there are several comments on a line, only the last comment
+	// will be interpreted according to these rules. For this reason there is a cursor to the last comment.
+	cursor = 0;
+	oparen_found = false;
+
+	while (comments[cursor] != '\0') {
+		char c = comments[cursor];
+
+		// Open parenthese... start of comment.
+		if (c == '(')
+		{
+			last_comment = comments + cursor;
+			oparen_found = true;
+		}
+
+		// Semicolon... start of comment to end of line, the last comment.
+		if (!oparen_found && c == ';')
+		{
+			last_comment = comments + cursor;
+			break;
+		}
+
+		// Look for end of comment.
+		if (c == ')')
+		{
+			oparen_found = false;
+
+			// Is this the end of the comment? Scan forward for second closing parenthese, but no opening parenthese first.
+			int cursor_ahead = cursor + 1;
+
+			while (comments[cursor_ahead] != '\0')
+			{
+				if (comments[cursor_ahead] == '(')
+					break;
+
+				if (comments[cursor_ahead] == ')')
+				{
+					oparen_found = true;
+					break;
+				}
+
+				cursor_ahead++;
+			}
+		}
+
+		cursor++;
+	}
+
+	// The optional block delete character the slash '/' when placed first on a line can be used
+	// by some user interfaces to skip lines of code when needed.
+	block_delete = (line_buf[0] == '/');
+
+	// The '%' is used to demarcate the beginning (first line) and end (last line) of the program. It is optional if the file has an 'M2' or 'M30'.
+	begin_end = (line_buf[0] == '%');
+}
+
+void tinyGCP_remove_comment_sep(void)
+{
+	size_t comments_len = strlen(comments);
+	size_t cursor = 0;
+	size_t cursor_correction = 0;
+	bool oparen_found = false;
+
+	char c;
+	while ((c = comments[cursor]) != '\0') {
+		if (c == '(') {
+			comments[cursor] = ' ';
+			oparen_found = true;
+		}
+
+		if (!oparen_found && c == ';') {
+			comments[cursor] = ' ';
+			break;
+		}
+
+		if (c == ')') {
+			oparen_found = false;
+			size_t cursor_ahead = cursor + 1;
+
+			for (size_t i = cursor + 1; i < comments_len; i++) {
+				if (comments[i] == '(')
+					break;
+
+				if (comments[i] == ')') {
+					oparen_found = true;
+					break;
+				}
+			}
+
+			if (!oparen_found) {
+				// Shift line left
+				for (size_t i = cursor; i < comments_len; i++)
+					comments[i] = comments[i + 1];
+			} else cursor++;
+		} else cursor++;
+	}
+
+	while (comments[0] == ' ')
+		// Shift cursor right
+		comments++;
+
+	while (last_comment[0] == ' ')
+		// Shift cursor right
+		last_comment++;
+}
+
+size_t tinyGCP_find_word(char c)
+{
+	size_t cursor = 0;
+	bool oparen_found = false;
+	bool semicolon_found = false;
+
+	while (line_buf[cursor] != '\0') {
+		if (c == line_buf[cursor]) return cursor;
+
+		cursor++;
+	}
+
+	return cursor;
+}
+
+bool tinyGCP_has_word(char c)
+{
+	if (tinyGCP_is_word(c)) {
+		size_t cursor = tinyGCP_find_word(c);
+		if (line_buf[cursor] == '\0') return false;
+	}
+
+	return true;
+}
+
+bool tinyGCP_is_word(char c)
+{
+	for (size_t i = 0; i < sizeof(valid_words); i++)
+		if (c == valid_words[i]) return true;
+
+	return false;
+}
+
+bool tinyGCP_blank_line(void)
+{
+	if (line_buf[0] == '\0' || block_delete || begin_end)
+		return true;
+
+	for (size_t i = 0; i < sizeof(valid_words); i++)
+		if (tinyGCP_has_word(valid_words[i])) return false;
+
+	return true;
+}
+
+double tinyGCP_get_word_value(char c)
+{
+	size_t cursor = tinyGCP_find_word(c);
+
+	if (line_buf[cursor] != '\0')
+		return (double) strtod(&line_buf[cursor + 1], NULL);
+
+	return 0.0;
+}
