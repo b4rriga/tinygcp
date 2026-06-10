@@ -1,6 +1,6 @@
 # TinyGCP
 
-## Description
+## Overview
 
 A simple, extremely barebones G-code parser, implemented in **about 100 lines of code!**
 
@@ -108,3 +108,25 @@ block at 0x7ffcea5ec040
 	{f: 1000.000, x: 0.000, y: 0.000, z: 0.000}
 }
 ```
+
+## G-code Support
+
+### Words
+
+| Word | Member | Description |
+|------|--------|-------------|
+| G | `.g` | Active G command |
+| M | `.m` | Active M command |
+| X | `.x` | X coordinate |
+| Y | `.y` | Y coordinate |
+| Z | `.z` | Z coordinate |
+| F | `.f` | Feed rate |
+
+### Comments
+
+Comment blocks `(those between parentheses)` and in-line comments `; those trailing the block`. Both kinds of comments are stored on `.comments` structure member.  As sometimes comments are used to trigger some action, such as `(print, ...)` or `(debug, ...)`. If there were several comments on the same block, only the last one would be interpreted. Thus, the last found comment will be pointed to by `.last_comment`.
+
+### Other Symbols
+
+- A leading slash `/`, which disables the whole block, will set `.block_del` to `true` if found.
+- A percent symbol `%` being the first character of a block will, set `.percent` to `true` if found. Often used to mark the start and end of a G-code program.
