@@ -1,3 +1,12 @@
+/*
+
+TinyGCP: Lightweight G-code parser
+
+Copyright (C) 2026 Hugo Barriga
+
+*/
+
+
 #include "tinygcp.h"
 
 void dump_block(FILE *stream, Block *b)
@@ -46,7 +55,6 @@ void parse_line(Block *b, const char *line)
     b->percent   = false;
     b->g_code    = -1;
     b->m_code    = -1;
-	//memset(b->comments, 0, MAX_LINE_SIZE);
 
 	char buf[MAX_LINE_SIZE] = {0};
 
@@ -58,7 +66,7 @@ void parse_line(Block *b, const char *line)
 
 	for (size_t i = 0; i < src_len; i++) {
 		char c = line[i];
-		if (c == '\n' || c == '\r') break;  // Support CRLF/NL formats
+		if (c == '\n' || c == '\r') break;
 		buf[i] = c;
 		line_len++;
 	}
@@ -84,7 +92,7 @@ void parse_line(Block *b, const char *line)
 			continue;
 		}
 
-		if (c == ')') continue;  // Ignore stray ')'
+		if (c == ')') continue;
 
 		if (c != ' ' && c != '\t') buf[dst++] = c;
 	}
@@ -92,7 +100,6 @@ void parse_line(Block *b, const char *line)
 	buf[dst] = '\0';
 	line_len = dst;
 	memset(b->comments + comments_len, 0, MAX_LINE_SIZE - comments_len);
-	//b->comments[comments_len] = '\0';
 	b->last_comment = b->comments;
 
 	for (size_t i = 0; i < comments_len; i++) {
