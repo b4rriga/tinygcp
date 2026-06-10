@@ -1,11 +1,9 @@
 /*
 
 TinyGCP: Lightweight G-code parser
-
 Copyright (C) 2026 Hugo Barriga
 
 */
-
 
 #include "tinygcp.h"
 
