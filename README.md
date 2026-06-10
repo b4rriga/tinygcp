@@ -124,9 +124,9 @@ block at 0x7ffcea5ec040
 
 ### Comments
 
-Comment blocks `(those between parentheses)` and in-line comments `; those trailing the block`. Both kinds of comments are stored on `.comments` structure member.  As sometimes comments are used to trigger some action, such as `(print, ...)` or `(debug, ...)`. If there were several comments on the same block, only the last one would be interpreted. Thus, the last found comment will be pointed to by `.last_comment`.
+Comment blocks `(those between parentheses)` and in-line comments `; those trailing the block`. Both kinds of comments are stored on `.comments` structure member. Sometimes, comments are used to trigger some action, such as `(print, ...)` or `(debug, ...)`. If there were several comments on the same block, only the last one would be interpreted. Thus, the last found comment will be pointed to by `.last_comment`.
 
 ### Other Symbols
 
 - A leading slash `/`, which disables the whole block, will set `.block_del` to `true` if found.
-- A percent symbol `%` being the first character of a block will, set `.percent` to `true` if found. Often used to mark the start and end of a G-code program.
+- A percent symbol `%` will set `.percent` to `true` if found as the first character of a block. Often used to mark the start and end of a G-code program.
