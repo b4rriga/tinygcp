@@ -133,6 +133,6 @@ Comment blocks `(those between parentheses)` and in-line comments `; those trail
 
 ## Limitations
 
-tinygcp is a G-code parser, not a complete G-code interpreter.
+TinyGCP is a G-code parser, not a complete G-code interpreter.
 
 Features such as variables, expressions, Boolean logic, macros and control flow are intentionally unsupported. The library is designed to parse G-code blocks and expose their contents through a compact C API, leaving execution and motion planning to the application.
