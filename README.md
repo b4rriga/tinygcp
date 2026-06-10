@@ -28,6 +28,83 @@ Install:
 sudo make install
 ```
 
-## Example
+## Usage Example
 
-**TODO**
+The following example takes G-code blocks from `stdin`, parses them one by one, and updates the `Block` structure. Parsed parameters can then be accessed directly through the structure fields (e.g. `b.x`). For each parsed block, the example dumps the complete structure to `stderr`.
+
+```c
+#include <stdio.h>
+#include <tinygcp.h>
+
+int main(void)
+{
+	Block b = {0};
+	char buf[MAX_LINE_SIZE];
+
+    while (fgets(buf, sizeof(buf), stdin) != NULL) {
+		parse_line(&b, buf);
+		dump_block(stderr, &b);
+    }
+
+	return 0;
+}
+```
+
+Given a file `cam_sw_output.gcode`, with contents:
+```text
+%
+
+G1 X5.5 Y5.5 Z2.0 F1200
+G1 X1 Y1 Z1 F1000 ; inline comment
+
+%
+```
+
+Running the example with said file redirected to its input:
+```sh
+./example < cam_sw_output.gcode
+```
+
+Results in the following output (thanks to `dump_block(FILE *, Block *)`):
+```text
+block at 0x7ffcea5ec040
+{
+	block_del = false
+	percent = true
+	comments = ``
+	last_comment = ``
+	g_code = -1
+	m_code = -1
+	{f: 0.000, x: 0.000, y: 0.000, z: 0.000}
+}
+block at 0x7ffcea5ec040
+{
+	block_del = false
+	percent = false
+	comments = ``
+	last_comment = ``
+	g_code = 1
+	m_code = -1
+	{f: 1200.000, x: 5.500, y: 5.500, z: 2.000}
+}
+block at 0x7ffcea5ec040
+{
+	block_del = false
+	percent = false
+	comments = `; inline comment`
+	last_comment = `; inline comment`
+	g_code = 1
+	m_code = -1
+	{f: 1000.000, x: 1.000, y: 1.000, z: 1.000}
+}
+block at 0x7ffcea5ec040
+{
+	block_del = false
+	percent = true
+	comments = ``
+	last_comment = ``
+	g_code = -1
+	m_code = -1
+	{f: 1000.000, x: 0.000, y: 0.000, z: 0.000}
+}
+```
