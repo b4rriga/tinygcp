@@ -130,3 +130,9 @@ Comment blocks `(those between parentheses)` and in-line comments `; those trail
 
 - A leading slash `/`, which disables the whole block, will set `.block_del` to `true` if found.
 - A percent symbol `%` will set `.percent` to `true` if found as the first character of a block. Often used to mark the start and end of a G-code program.
+
+## Limitations
+
+tinygcp is a G-code parser, not a complete G-code interpreter.
+
+Features such as variables, expressions, Boolean logic, macros and control flow are intentionally unsupported. The library is designed to parse G-code blocks and expose their contents through a compact C API, leaving execution and motion planning to the application.
